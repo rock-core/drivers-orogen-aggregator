@@ -1,0 +1,16 @@
+name "aggregator"
+
+using_library "aggregator"
+import_types_from "aggregator/StreamAlignerStatus.hpp"
+
+
+typekit do
+    if type_export_policy == :used
+        # We assume that, if the caller wants a 'used' type policy, it means he
+        # wants partial exports. Move to 'selected'. oroGen would have changed
+        # it to 'all'
+        type_export_policy :selected
+    end
+
+    export_types '/aggregator/StreamAlignerStatus'
+ end	

@@ -1,0 +1,8 @@
+<package>
+  <description brief="orogen/aggregator">
+  rock specific part of the aggregator package.
+  </description>
+  <author>Janosch Machowinski</author>
+  <license>lgpl</license>
+  <depend package="drivers/aggregator" />
+</package>
