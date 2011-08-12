@@ -116,7 +116,7 @@ module AggregatorPlugin
 			doc "Maximum time that should be waited for a delayed sample to arrive"
 	    Orocos::Generation.info("Adding property aggregator_max_latency")
 
-	    task.project.import_types_from('StreamAlignerStatus.hpp')
+	    task.project.import_types_from('aggregator')
 
 	    #add output port for status information
 	    task.output_port("#{agg_name}_status", '/aggregator/StreamAlignerStatus')
