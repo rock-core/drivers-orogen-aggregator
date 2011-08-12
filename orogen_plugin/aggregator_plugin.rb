@@ -152,7 +152,7 @@ module AggregatorPlugin
 	
 	def generate_aggregator_code(config)
 	    
-	    task.add_base_header_code("#include<StreamAligner.hpp>", true)
+	    task.add_base_header_code("#include<aggregator/StreamAligner.hpp>", true)
 	    task.add_base_member("aggregator", agg_name, "aggregator::StreamAligner")
 	    task.add_base_member("lastStatusTime", "_lastStatusTime", "base::Time")
 
