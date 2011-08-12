@@ -1,5 +1,6 @@
 name "aggregator"
 
+import_types_from "base"
 using_library "aggregator"
 import_types_from "aggregator/StreamAlignerStatus.hpp"
 
