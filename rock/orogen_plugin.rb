@@ -89,7 +89,7 @@ module StreamAlignerPlugin
 	}")
 	end
 	
-	def generate_aggregator_code(task, config)
+	def generate(task, config)
             agg_name = config.name
             generate_port_listener_code(task, config)
 
@@ -208,7 +208,7 @@ module StreamAlignerPlugin
 
         def register_for_generation(task)
             #register code generator to be called after parsing is done
-            Generator.new.generate_aggregator_code(task, self)
+            Generator.new.generate(task, self)
         end
     end
 end
