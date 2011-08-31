@@ -105,7 +105,7 @@ module StreamAlignerPlugin
 	    config.streams.each do |m|     
 		callback_name = m.port_name + "Callback"
 
-		port_data_type = m.get_data_type(task)
+		port_data_type = type_cxxname(m, task)
 	                             
 		#add callbacks
 		task.add_user_method("void", callback_name, "const base::Time &ts, const #{port_data_type} &#{m.port_name}_sample").
@@ -147,6 +147,14 @@ module StreamAlignerPlugin
     #{agg_name}.clear();
     ")
 	end
+	def type_cxxname(stream, task)
+	    port = task.find_input_port(stream.port_name)
+	    if(!port)
+		raise "Error trying to align nonexisting port " + port_name
+	    end
+	    
+	    port.type.cxx_name
+	end
     end
 
     class Stream
@@ -157,15 +165,6 @@ module StreamAlignerPlugin
 
 	attr_reader :port_name
 	attr_reader :data_period
-	
-	def get_data_type(task)
-	    port = task.find_port(port_name)
-	    if(!port)
-		raise "Error trying to align nonexisting port " + port_name
-	    end
-	    
-	    port.type.cxx_name	    
-	end
     end
     
     class Extension
