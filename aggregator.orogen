@@ -16,4 +16,8 @@ typekit do
 
     export_types '/aggregator/StreamAlignerStatus',
         '/aggregator/TimestampEstimatorStatus'
+
+    # This one is actually for the transformer plugin, but we want to avoid
+    # adding a new package just for that
+    export_types '/std/vector</base/samples/RigidBodyState>'
  end	
