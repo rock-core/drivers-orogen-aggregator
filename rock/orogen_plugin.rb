@@ -195,6 +195,9 @@ module StreamAlignerPlugin
         # The stream aligner name. Always "aggregator" for now
 	attr_reader :name
 
+        # The task model on which this stream aligner is defined
+        attr_reader :task_model
+
         ##
         # :method: max_latency
         # :call-seq:
@@ -208,10 +211,16 @@ module StreamAlignerPlugin
         # The defined streams, as an array of Stream objects
 	attr_reader :streams
 	
-	def initialize()
+	def initialize(task_model)
+            @task_model = task_model
 	    @streams = Array.new()
             @name = "aggregator"
 	end
+
+        # Enumerates the task ports that are aligned on this stream aligner
+        def each_aligned_port(&block)
+            streams.map { |s| task_model.find_input_port(s.port_name) }.each(&block)
+        end
 	
         # Declares that the stream aligner should be configured to pull data
         # from the input port +name+ with a default period of +default_period+
@@ -223,14 +232,14 @@ module StreamAlignerPlugin
 	end	
 
         # Adds to the task the interface objects for the benefit of the stream aligner
-        def update_spec(task)
-	    task.project.import_types_from('aggregator')
+        def update_spec
+	    task_model.project.import_types_from('aggregator')
 
 	    Orocos::Spec.info("stream_aligner: adding property aggregator_max_latency")
-	    task.property("aggregator_max_latency",   'double', max_latency).
+	    task_model.property("aggregator_max_latency",   'double', max_latency).
 			doc "Maximum time that should be waited for a delayed sample to arrive"
 	    Orocos::Spec.info("stream_aligner: adding port #{name}_status")
-	    task.output_port("#{name}_status", '/aggregator/StreamAlignerStatus')
+	    task_model.output_port("#{name}_status", '/aggregator/StreamAlignerStatus')
 
 	    #add output port for status information
 
@@ -239,8 +248,8 @@ module StreamAlignerPlugin
 		#this needs to be done now, as the properties must be 
 		#present prior to the generation handler call
 		property_name = "#{m.port_name}_period"
-		if(!(task.find_property(property_name)))
-		    task.property(property_name,   'double', m.data_period).
+		if(!(task_model.find_property(property_name)))
+		    task_model.property(property_name,   'double', m.data_period).
 			doc "Time in s between #{m.port_name} readings"
 		    Orocos::Spec.info("stream_aligner: adding property #{property_name}")
 		end
@@ -249,7 +258,7 @@ module StreamAlignerPlugin
 
         def register_for_generation(task)
             #register code generator to be called after parsing is done
-            Generator.new.generate(task, self)
+            Generator.new.generate(task_model, self)
         end
     end
 end
@@ -271,15 +280,23 @@ class Orocos::Spec::TaskContext
     #   task_model.extension("stream_aligner")
     #
     def stream_aligner(&block)	
+        if !block_given?
+            return find_extension("stream_aligner")
+        end
+
+        if agg = find_extension("stream_aligner")
+            raise ArgumentError, "there is already a stream aligner defined on this task"
+        end
+
         PortListenerPlugin.add_to(self)
 
-	config = StreamAlignerPlugin::Extension.new()
+	config = StreamAlignerPlugin::Extension.new(self)
 	config.instance_eval(&block)
 	if !config.max_latency
 	   raise ArgumentError, "no max_latency specified for the stream aligner" 
 	end
     
-        config.update_spec(self)
+        config.update_spec
         register_extension("stream_aligner", config)
     end
 end
