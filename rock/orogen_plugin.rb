@@ -67,6 +67,9 @@ module PortListenerPlugin
         def add_code_after_port_read(code)
             in_loop_code << code
         end
+
+        def pretty_print(pp)
+        end
     end
 
     def self.add_to(task)
