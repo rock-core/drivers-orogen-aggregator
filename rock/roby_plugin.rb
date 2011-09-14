@@ -61,10 +61,7 @@ module Aggregator
                     task.aligned_ports_periods[p.name] = 0
                 end
             end
-
-            puts "#{task}: #{aligned_ports_periods}"
         end
-        raise
     end
 end
 
