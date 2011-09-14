@@ -236,22 +236,21 @@ module StreamAlignerPlugin
 
         # Adds to the task the interface objects for the benefit of the stream aligner
         def update_spec
-	    task_model.project.import_types_from('aggregator')
+            # Don't add the base interface elements if they already have been
+            # added
+            if !task_model.has_property?("aggregator_max_latency")
+                task_model.project.import_types_from('aggregator')
 
-	    Orocos::Spec.info("stream_aligner: adding property aggregator_max_latency")
-	    task_model.property("aggregator_max_latency",   'double', max_latency).
-			doc "Maximum time that should be waited for a delayed sample to arrive"
-	    Orocos::Spec.info("stream_aligner: adding port #{name}_status")
-	    task_model.output_port("#{name}_status", '/aggregator/StreamAlignerStatus')
-
-	    #add output port for status information
+                Orocos::Spec.info("stream_aligner: adding property aggregator_max_latency")
+                task_model.property("aggregator_max_latency",   'double', max_latency).
+                            doc "Maximum time that should be waited for a delayed sample to arrive"
+                Orocos::Spec.info("stream_aligner: adding port #{name}_status")
+                task_model.output_port("#{name}_status", '/aggregator/StreamAlignerStatus')
+            end
 
 	    streams.each do |m| 
-		#add propertie for adjusting the period if not existing yet
-		#this needs to be done now, as the properties must be 
-		#present prior to the generation handler call
 		property_name = "#{m.port_name}_period"
-		if(!(task_model.find_property(property_name)))
+		if !task_model.find_property(property_name)
 		    task_model.property(property_name,   'double', m.data_period).
 			doc "Time in s between #{m.port_name} readings"
 		    Orocos::Spec.info("stream_aligner: adding property #{property_name}")
@@ -287,13 +286,11 @@ class Orocos::Spec::TaskContext
             return find_extension("stream_aligner")
         end
 
-        if agg = find_extension("stream_aligner")
-            raise ArgumentError, "there is already a stream aligner defined on this task"
+        if !(config = find_extension("stream_aligner"))
+            config = StreamAlignerPlugin::Extension.new(self)
+            PortListenerPlugin.add_to(self)
         end
 
-        PortListenerPlugin.add_to(self)
-
-	config = StreamAlignerPlugin::Extension.new(self)
 	config.instance_eval(&block)
 	if !config.max_latency
 	   raise ArgumentError, "no max_latency specified for the stream aligner" 
