@@ -67,3 +67,4 @@ end
 
 Orocos::RobyPlugin::TaskContext.include Aggregator::TaskExtension
 Orocos::RobyPlugin::Graphviz.include Aggregator::GraphvizExtension
+Roby.app.filter_out_patterns.push(/^#{Regexp.quote(__FILE__)}/)
