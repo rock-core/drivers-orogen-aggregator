@@ -95,7 +95,7 @@ module StreamAlignerPlugin
 		#push data in update hook
 		port_listener_ext.add_port_listener(m.port_name) do |sample_name|
 		    "
-	#{agg_name}.push(#{index_name}, #{sample_name}.time, #{sample_name});"
+	_#{agg_name}.push(#{index_name}, #{sample_name}.time, #{sample_name});"
 		end
 	    end
 	    
@@ -111,12 +111,12 @@ module StreamAlignerPlugin
             generate_port_listener_code(task, config)
 
 	    task.add_base_header_code("#include<aggregator/StreamAligner.hpp>", true)
-	    task.add_base_member("aggregator", agg_name, "aggregator::StreamAligner")
+	    task.add_base_member("aggregator", "_#{agg_name}", "aggregator::StreamAligner")
 	    task.add_base_member("lastStatusTime", "_lastStatusTime", "base::Time")
 
 	    task.in_base_hook("configure", "
-    #{agg_name}.clear();
-    #{agg_name}.setTimeout( base::Time::fromSeconds( _aggregator_max_latency.value()) );
+    _#{agg_name}.clear();
+    _#{agg_name}.setTimeout( base::Time::fromSeconds( _aggregator_max_latency.value()) );
 	    ")
 
 	    config.streams.each do |m|     
@@ -138,7 +138,7 @@ module StreamAlignerPlugin
 		#register callbacks at aggregator
 		task.in_base_hook("configure", "
     const double #{m.port_name}Period = _#{m.port_name}_period.value();
-    #{index_name} = #{agg_name}.registerStream< #{port_data_type}>(
+    #{index_name} = _#{agg_name}.registerStream< #{port_data_type}>(
 	boost::bind( &TaskBase::#{callback_name}, this, _1, _2 ),
 	#{buffer_size_factor}* ceil( #{config.max_latency}/#{m.port_name}Period),
 	base::Time::fromSeconds( #{m.port_name}Period ) );
@@ -146,7 +146,7 @@ module StreamAlignerPlugin
 
 		#deregister in cleanup hook
 		task.in_base_hook('cleanup', "
-    #{agg_name}.unregisterStream(#{index_name});")
+    _#{agg_name}.unregisterStream(#{index_name});")
 		
 	    end
 	    
@@ -156,12 +156,12 @@ module StreamAlignerPlugin
 	if(curTime - _lastStatusTime > base::Time::fromSeconds(1))
 	{
 	    _lastStatusTime = curTime;
-	    _#{agg_name}_status.write(#{agg_name}.getStatus());
+	    _#{agg_name}_status.write(_#{agg_name}.getStatus());
 	}
     }")
 
 	    task.in_base_hook('stop', "
-    #{agg_name}.clear();
+    _#{agg_name}.clear();
     ")
 	end
 	
@@ -217,7 +217,7 @@ module StreamAlignerPlugin
 	def initialize(task_model)
             @task_model = task_model
 	    @streams = Array.new()
-            @name = "aggregator"
+            @name = "stream_aligner"
 	end
 
         # Enumerates the task ports that are aligned on this stream aligner
