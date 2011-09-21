@@ -100,7 +100,7 @@ module StreamAlignerPlugin
 	    end
 	    
 	    port_listener_ext.add_code_after_port_read("
-	while(aggregator.step()) 
+	while(_#{agg_name}.step()) 
 	{
 	    ;
 	}")
