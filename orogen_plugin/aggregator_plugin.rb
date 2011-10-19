@@ -181,7 +181,7 @@ module AggregatorPlugin
 		task.in_base_hook("configure", "
     const double #{m.port_name}Period = _#{m.port_name}_period.value();
     #{index_name} = #{agg_name}.registerStream< #{port_data_type}>(
-	boost::bind( &TaskBase::#{callback_name}, this, _1, _2 ),
+	boost::bind( &#{task.basename}Base::#{callback_name}, this, _1, _2 ),
 	#{buffer_size_factor}* ceil( #{config.max_latency}/#{m.port_name}Period),
 	base::Time::fromSeconds( #{m.port_name}Period ) );
     _lastStatusTime = base::Time();")
