@@ -118,6 +118,10 @@ module AggregatorPlugin
 
 	    task.project.import_types_from('aggregator')
 
+            #a aggregator allways need to be configured
+	    Orocos::Generation.info("Adding needs_configuration")
+            task.needs_configuration()
+
 	    #add output port for status information
 	    task.output_port("#{agg_name}_status", '/aggregator/StreamAlignerStatus')
 	    Orocos::Generation.info("Adding port #{agg_name}_status")
