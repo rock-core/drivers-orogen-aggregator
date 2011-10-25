@@ -244,6 +244,8 @@ module StreamAlignerPlugin
                 Orocos::Spec.info("stream_aligner: adding property aggregator_max_latency")
                 task_model.property("aggregator_max_latency",   'double', max_latency).
                             doc "Maximum time that should be waited for a delayed sample to arrive"
+                Orocos::Spec.info("stream_aligner: marking the task as needs_configuration")
+                task_model.needs_configuration
                 Orocos::Spec.info("stream_aligner: adding port #{name}_status")
                 task_model.output_port("#{name}_status", '/aggregator/StreamAlignerStatus')
             end
