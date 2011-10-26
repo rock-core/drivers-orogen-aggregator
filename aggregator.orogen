@@ -3,6 +3,7 @@ name "aggregator"
 import_types_from "base"
 using_library "aggregator"
 import_types_from "aggregator/StreamAlignerStatus.hpp"
+import_types_from "aggregator/TimestampEstimatorStatus.hpp"
 
 
 typekit do
@@ -13,5 +14,6 @@ typekit do
         type_export_policy :selected
     end
 
-    export_types '/aggregator/StreamAlignerStatus'
+    export_types '/aggregator/StreamAlignerStatus',
+        '/aggregator/TimestampEstimatorStatus'
  end	
