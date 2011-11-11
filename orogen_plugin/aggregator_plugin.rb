@@ -125,6 +125,10 @@ module AggregatorPlugin
 	    #add output port for status information
 	    task.output_port("#{agg_name}_status", '/aggregator/StreamAlignerStatus')
 	    Orocos::Generation.info("Adding port #{agg_name}_status")
+	    #and property to set the period for writing the status information
+	    task.property("#{agg_name}_period", 'double', 1.0).
+		doc "Minimum system time in s between two status readings."
+	    Orocos::Generation.info("Adding property #{agg_name}_status")
 
 	    config.aligned_ports.each do |m| 
 		#add propertie for adjusting the period if not existing yet
@@ -199,7 +203,7 @@ module AggregatorPlugin
 	    task.in_base_hook('update', "
     {
 	const base::Time curTime(base::Time::now());
-	if(curTime - _lastStatusTime > base::Time::fromSeconds(1))
+	if(curTime - _lastStatusTime > base::Time::fromSeconds( _#{agg_name}_period.value() ))
 	{
 	    _lastStatusTime = curTime;
 	    _#{agg_name}_status.write(#{agg_name}.getStatus());
