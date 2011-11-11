@@ -243,18 +243,21 @@ module StreamAlignerPlugin
 
                 Orocos::Spec.info("stream_aligner: adding property aggregator_max_latency")
                 task_model.property("aggregator_max_latency",   'double', max_latency).
-                            doc "Maximum time that should be waited for a delayed sample to arrive"
+                    doc "maximum latency, in seconds, of the stream aligner. The aligner will start dropping samples if the difference between the last output and last input is greater than this"
                 Orocos::Spec.info("stream_aligner: marking the task as needs_configuration")
                 task_model.needs_configuration
                 Orocos::Spec.info("stream_aligner: adding port #{name}_status")
                 task_model.output_port("#{name}_status", '/aggregator/StreamAlignerStatus')
+                Orocos::Spec.info("stream_aligner: adding property #{name}_status_period, which controls the time in seconds between status are sent to the #{name}_status port")
+                task.property("#{name}_status_period", 'double', 1.0).
+                    doc "minimum system time in s between two status readings"
             end
 
 	    streams.each do |m| 
 		property_name = "#{m.port_name}_period"
 		if !task_model.find_property(property_name)
 		    task_model.property(property_name,   'double', m.data_period).
-			doc "Time in s between #{m.port_name} readings"
+			doc "minimum time, in s, between two sequential samples arrive on #{m.port_name}"
 		    Orocos::Spec.info("stream_aligner: adding property #{property_name}")
 		end
             end
