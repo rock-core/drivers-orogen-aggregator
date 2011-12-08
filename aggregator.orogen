@@ -16,4 +16,4 @@ typekit do
 
     export_types '/aggregator/StreamAlignerStatus',
         '/aggregator/TimestampEstimatorStatus'
- end	
+end	
