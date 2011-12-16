@@ -6,7 +6,7 @@ module Aggregator
         def configure
             super if defined? super
             aligned_ports_periods.each do |port_name, period|
-                property("#{port_name}_period").set(period)
+                property("#{port_name}_period").write(period)
             end
         end
 
