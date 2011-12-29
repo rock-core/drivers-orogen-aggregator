@@ -144,6 +144,10 @@ module StreamAlignerPlugin
 	base::Time::fromSeconds( #{m.port_name}Period ) );
     _lastStatusTime = base::Time();")
 
+		# disable streams in start hook, which are not connected
+		task.in_base_hook("start", "
+		    if( !_#{m.port_name}.connected() ) _#{agg_name}.disableStream( #{index_name} );")
+
 		#deregister in cleanup hook
 		task.in_base_hook('cleanup', "
     _#{agg_name}.unregisterStream(#{index_name});")
