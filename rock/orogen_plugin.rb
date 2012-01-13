@@ -238,6 +238,18 @@ module StreamAlignerPlugin
 	    streams << Stream.new(name, default_period)
 	end	
 
+        def pretty_print(pp)
+            pp.text "Default max latency: #{max_latency}"
+            pp.breakable
+            pp.text "Aligned ports:"
+            pp.nest(2) do
+                pp.breakable
+                pp.seplist(streams) do |s|
+                    pp.text "  #{s.port_name} (default period: #{s.data_period})"
+                end
+            end
+        end
+
         # Adds to the task the interface objects for the benefit of the stream aligner
         def update_spec
             # Don't add the base interface elements if they already have been
