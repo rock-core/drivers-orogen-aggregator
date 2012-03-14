@@ -7,61 +7,99 @@
 # to push data to all of them
 module PortListenerPlugin
     # The extension that gets registered on TaskContext
-    class Extension
+    class Extension < Orocos::Spec::TaskModelExtension
+        attr_reader :task
 	attr_reader :in_loop_code
         attr_reader :port_listeners
 
-	def initialize
+	def initialize(name, task)
+            super(name)
+            @task = task
 	    @port_listeners = Hash.new()
 	    @in_loop_code = Array.new()
 	end
+
+        def pull_loop_prefix
+            "
+    bool keepGoing = true;
+    bool hasData[#{port_listeners.size}] = { #{(['true'] * port_listeners.size).join(", ")} };
+    
+    while(keepGoing)
+    {
+        keepGoing = false;
+"        
+        end
+
+        def pull_loop_suffix
+            "
+    }"
+        end
+    
+        def pull_port(port, idx, gens)
+            "
+        if(hasData[#{idx}] && _#{port.name}.read(port_listener_#{port.name}_sample, false) == RTT::NewData )
+        {
+            #{gens.map { |gen| gen.call("port_listener_#{port.name}_sample") }.join("\n      ")}
+            keepGoing = true;
+        }
+        else
+            hasData[#{idx}] = false;"
+        end
 	
         def register_for_generation(task)
             # Use a block so that the code generation gets delayed. This makes
             # sure that all listeners are registered properly before we generate
             # the code
-	    task.in_base_hook("update") do
-	    code = "
-    bool keepGoing = true;
-    
-    while(keepGoing)
-    {
-	keepGoing = false;
-	"        
-	    port_listeners.each do |port_name, gens|
-	    
-		port = task.find_port(port_name)
-		if(!port)
-		    raise "Internal error trying to listen to nonexisting port " + port_name 
-		end
-		
-		code += "
-	#{port.type.cxx_name} #{port_name}Sample;
-	if(_#{port_name}.read(#{port_name}Sample, false) == RTT::NewData )
-	{"
-	    gens.each{|gen| code += gen.call("#{port_name}Sample")}
-	    code += "
-	    keepGoing = true;
-	}"                   
-	    end
-	    
-	    in_loop_code.each do |block|
-		code += block
-	    end
-	    
-	    code +="
-    }"
+	    task.in_base_hook("update", "    pullPorts();")
+            task.add_base_method('void', 'pullPorts').body do
+                code = ""
+                if task.superclass.find_extension(name)
+                    code << "    #{task.superclass.name}::pullPorts();"
+                end
+
+                if !port_listeners.empty?
+                    code += pull_loop_prefix
+                    port_listeners.each_with_index do |(port_name, gens), idx|
+                        port = task.find_port(port_name)
+                        if(!port)
+                            raise "Internal error trying to listen to nonexisting port " + port_name 
+                        end
+                        code += pull_port(port, idx, gens)
+                    end
+                    in_loop_code.each do |block|
+                        if block.respond_to?(:call)
+                            code += block.call
+                        else
+                            code += block
+                        end
+                    end
+                    code += pull_loop_suffix
+                end
             end
-	end	
+
+	end
+
+        def has_listener_for?(name)
+            (port_listeners.has_key?(name) && !port_listeners[name].empty?) ||
+                supercall(false, :has_listener_for?, name)
+        end
     
         def add_port_listener(name, &generator_method)
             Orocos::Generation.info "added port listener for port #{name}"
-            
-            if(!port_listeners[name])
-                port_listeners[name] = Array.new
+
+            # We are currently limited to pulling ports that have not yet been
+            # pulled by parent classes. Enforce this.
+            port_model = task.find_input_port(name)
+            if !port_model
+                raise ArgumentError, "#{name} is not an input port of #{task.name}"
+            elsif supercall(false, :has_listener_for?, name)
+                raise ArgumentError, "#{name} is already listened to by #{superclass.name} or one of its parent classes, you can't add it again"
             end
             
+            port_listeners[name] ||= Array.new
             port_listeners[name] << generator_method
+
+            task.add_base_member("port_listener", "port_listener_#{port_model.name}_sample", port_model.type.cxx_name)
         end
         
         def add_code_after_port_read(code)
@@ -73,10 +111,10 @@ module PortListenerPlugin
     end
 
     def self.add_to(task)
-        if task.has_extension?("port_listener")
+        if task.has_extension?("port_listener", false)
             return
         end
-        task.register_extension "port_listener", Extension.new
+        task.register_extension Extension.new('port_listener', task)
     end
 end
 
@@ -116,8 +154,7 @@ module StreamAlignerPlugin
 
 	    task.in_base_hook("configure", "
     _#{agg_name}.clear();
-    _#{agg_name}.setTimeout( base::Time::fromSeconds( _aggregator_max_latency.value()) );
-	    ")
+    _#{agg_name}.setTimeout( base::Time::fromSeconds( _aggregator_max_latency.value()) );")
 
 	    config.streams.each do |m|     
 		callback_name = m.port_name + "Callback"
@@ -165,8 +202,7 @@ module StreamAlignerPlugin
     }")
 
 	    task.in_base_hook('stop', "
-    _#{agg_name}.clear();
-    ")
+    _#{agg_name}.clear();")
 	end
 	
 	def type_cxxname(stream, task)
@@ -198,10 +234,7 @@ module StreamAlignerPlugin
     end
     
     # Extension to the task model to represent the stream aligner setup
-    class Extension
-        # The stream aligner name. Always "aggregator" for now
-	attr_reader :name
-
+    class Extension < Orocos::Spec::TaskModelExtension
         # The task model on which this stream aligner is defined
         attr_reader :task_model
 
@@ -218,10 +251,10 @@ module StreamAlignerPlugin
         # The defined streams, as an array of Stream objects
 	attr_reader :streams
 	
-	def initialize(task_model)
+	def initialize(name, task_model)
+            super(name)
             @task_model = task_model
 	    @streams = Array.new()
-            @name = "stream_aligner"
 	end
 
         # Enumerates the task ports that are aligned on this stream aligner
@@ -307,8 +340,8 @@ class Orocos::Spec::TaskContext
             return find_extension("stream_aligner")
         end
 
-        if !(config = find_extension("stream_aligner"))
-            config = StreamAlignerPlugin::Extension.new(self)
+        if !(config = find_extension("stream_aligner", false))
+            config = StreamAlignerPlugin::Extension.new("stream_aligner", self)
             PortListenerPlugin.add_to(self)
         end
 
@@ -318,7 +351,7 @@ class Orocos::Spec::TaskContext
 	end
     
         config.update_spec
-        register_extension("stream_aligner", config)
+        register_extension(config)
     end
 end
 
