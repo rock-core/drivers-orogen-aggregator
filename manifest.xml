@@ -6,4 +6,5 @@
   <license>lgpl</license>
   <depend package="drivers/aggregator" />
   <depend package="base/orogen/types" />
+  <tags>stable</tags>
 </package>
