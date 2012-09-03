@@ -175,7 +175,7 @@ module StreamAlignerPlugin
 		#register callbacks at aggregator
 		task.in_base_hook("configure", "
     const double #{m.port_name}Period = _#{m.port_name}_period.value();
-    #{index_name} = _#{agg_name}.registerStream< #{port_data_type}>(
+    #{index_name} = _#{agg_name}.registerStream< #{port_data_type} >(
 	boost::bind( &#{task.name}Base::#{callback_name}, this, _1, _2 ),
 	#{buffer_size_factor}* ceil( #{config.max_latency}/#{m.port_name}Period),
 	base::Time::fromSeconds( #{m.port_name}Period ) );
