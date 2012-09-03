@@ -133,7 +133,7 @@ module StreamAlignerPlugin
 		#push data in update hook
 		port_listener_ext.add_port_listener(m.port_name) do |sample_name|
 		    "
-	_#{agg_name}.push(#{index_name}, #{sample_name}.time, #{sample_name});"
+	_#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
 		end
 	    end
 	    
@@ -221,9 +221,10 @@ module StreamAlignerPlugin
         # default period
         #
         # It is strongly advised to keep the period to zero
-	def initialize(name, period = 0)
+	def initialize(name, period = 0, time_field = 'time')
 	    @port_name = name
 	    @data_period = period
+	    @time_field = time_field
 	end
 
         # The task's port name
@@ -231,6 +232,8 @@ module StreamAlignerPlugin
         # The period of the incoming data. It is strongly advised to keep it to
         # zero in stream aligner specifications
 	attr_reader :data_period
+	# name of the time field. defaults to 'time'
+	attr_reader :time_field
     end
     
     # Extension to the task model to represent the stream aligner setup
@@ -267,8 +270,8 @@ module StreamAlignerPlugin
         #
         # Periods are highly system-specific. It is very stronly advised to keep
         # it to the default value of zero.
-	def align_port(name, default_period = 0)
-	    streams << Stream.new(name, default_period)
+	def align_port(name, default_period = 0, time_field = 'time')
+	    streams << Stream.new(name, default_period, time_field)
 	end	
 
         def pretty_print(pp)
