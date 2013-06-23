@@ -131,15 +131,19 @@ module StreamAlignerPlugin
 		index_name = m.port_name + "_idx"
 		
 		#push data in update hook
-		port_listener_ext.add_port_listener(m.port_name) do |sample_name,type|
-                    if type.name =~ /\/RTT\/extras\/ReadOnlyPointer/
-		    "
-	_#{agg_name}.push(#{index_name}, #{sample_name}.#{m->time_field}, #{sample_name});"
-                    else
-		    "
-	_#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
-                    end
-		end
+                port_data_type = type_cxxname(m, task)
+                if port_data_type.include? "::RTT::extras::ReadOnlyPointer<"
+                    port_listener_ext.add_port_listener(m.port_name) do |sample_name|
+                        puts port_data_type
+                        "
+                	_#{agg_name}.push(#{index_name}, #{sample_name}->#{m.time_field}, #{sample_name});"
+	            end
+                else
+        	    port_listener_ext.add_port_listener(m.port_name) do |sample_name|
+                        "
+        	        _#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
+		    end
+                end
 	    end
 	    
 	    port_listener_ext.add_code_after_port_read("
