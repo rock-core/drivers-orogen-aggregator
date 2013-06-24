@@ -134,7 +134,6 @@ module StreamAlignerPlugin
                 port_data_type = type_cxxname(m, task)
                 if port_data_type.include? "::RTT::extras::ReadOnlyPointer<"
                     port_listener_ext.add_port_listener(m.port_name) do |sample_name|
-                        puts port_data_type
                         "
                 	_#{agg_name}.push(#{index_name}, #{sample_name}->#{m.time_field}, #{sample_name});"
 	            end
