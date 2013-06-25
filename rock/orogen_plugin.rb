@@ -39,7 +39,7 @@ module PortListenerPlugin
             "
         if(hasData[#{idx}] && _#{port.name}.read(port_listener_#{port.name}_sample, false) == RTT::NewData )
         {
-            #{gens.map { |gen| gen.call("port_listener_#{port.name}_sample",port.type) }.join("\n      ")}
+            #{gens.map { |gen| gen.call("port_listener_#{port.name}_sample") }.join("\n      ")}
             keepGoing = true;
         }
         else
@@ -132,15 +132,15 @@ module StreamAlignerPlugin
 		
 		#push data in update hook
                 port_data_type = type_cxxname(m, task)
-                if port_data_type.include? "::RTT::extras::ReadOnlyPointer<"
+                if port_data_type.include? "::RTT::extras::ReadOnlyPointer"
                     port_listener_ext.add_port_listener(m.port_name) do |sample_name|
                         "
-                	_#{agg_name}.push(#{index_name}, #{sample_name}->#{m.time_field}, #{sample_name});"
+            _#{agg_name}.push(#{index_name}, #{sample_name}->#{m.time_field}, #{sample_name});"
 	            end
                 else
         	    port_listener_ext.add_port_listener(m.port_name) do |sample_name|
                         "
-        	        _#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
+            _#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
 		    end
                 end
 	    end
