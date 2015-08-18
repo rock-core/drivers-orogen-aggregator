@@ -46,7 +46,7 @@ module PortListenerPlugin
             hasData[#{idx}] = false;"
         end
 	
-        def register_for_generation(task)
+        def generation_hook(task)
             # Use a block so that the code generation gets delayed. This makes
             # sure that all listeners are registered properly before we generate
             # the code
