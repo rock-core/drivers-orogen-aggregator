@@ -132,16 +132,30 @@ module StreamAlignerPlugin
 		
 		#push data in update hook
                 port_data_type = type_cxxname(m, task)
-                if port_data_type.include? "::RTT::extras::ReadOnlyPointer"
-                    port_listener_ext.add_port_listener(m.port_name) do |sample_name|
-                        "
-            _#{agg_name}.push(#{index_name}, #{sample_name}->#{m.time_field}, #{sample_name});"
-	            end
+                if m.time_field.nil? or m.time_field == ''
+                    if port_data_type.include? "::RTT::extras::ReadOnlyPointer"
+                        port_listener_ext.add_port_listener(m.port_name) do |sample_name|
+                            "
+                _#{agg_name}.push(#{index_name}, aggregator::determineTimestamp(*#{sample_name}), #{sample_name});"
+                        end
+                    else
+                        port_listener_ext.add_port_listener(m.port_name) do |sample_name|
+                            "
+                _#{agg_name}.push(#{index_name}, aggregator::determineTimestamp(#{sample_name}), #{sample_name});"
+                        end
+                    end
                 else
-        	    port_listener_ext.add_port_listener(m.port_name) do |sample_name|
-                        "
-            _#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
-		    end
+                    if port_data_type.include? "::RTT::extras::ReadOnlyPointer"
+                        port_listener_ext.add_port_listener(m.port_name) do |sample_name|
+                            "
+                _#{agg_name}.push(#{index_name}, #{sample_name}->#{m.time_field}, #{sample_name});"
+                        end
+                    else
+                        port_listener_ext.add_port_listener(m.port_name) do |sample_name|
+                            "
+                _#{agg_name}.push(#{index_name}, #{sample_name}.#{m.time_field}, #{sample_name});"
+                        end
+                    end
                 end
 	    end
 	    
@@ -157,6 +171,7 @@ module StreamAlignerPlugin
             generate_port_listener_code(task, config)
 
 	    task.add_base_header_code("#include<aggregator/StreamAligner.hpp>", true)
+            task.add_base_header_code("#include <aggregator/DetermineSampleTimestamp.hpp>", true)
 	    task.add_base_member("aggregator", "_#{agg_name}", "aggregator::StreamAligner")
 	    task.add_base_member("lastStatusTime", "_lastStatusTime", "base::Time")
 
@@ -229,7 +244,7 @@ module StreamAlignerPlugin
         # default period
         #
         # It is strongly advised to keep the period to zero
-	def initialize(name, period = 0, time_field = 'time')
+	def initialize(name, period = 0, time_field = nil)
 	    @port_name = name
 	    @data_period = period
 	    @time_field = time_field
@@ -240,7 +255,8 @@ module StreamAlignerPlugin
         # The period of the incoming data. It is strongly advised to keep it to
         # zero in stream aligner specifications
 	attr_reader :data_period
-	# name of the time field. defaults to 'time'
+	# name of the time field. default is nil, in this case the
+        # determineTimestamp function is used.
 	attr_reader :time_field
     end
     
@@ -278,7 +294,7 @@ module StreamAlignerPlugin
         #
         # Periods are highly system-specific. It is very stronly advised to keep
         # it to the default value of zero.
-	def align_port(name, default_period = 0, time_field = 'time')
+	def align_port(name, default_period = 0, time_field = nil)
 	    streams << Stream.new(name, default_period, time_field)
 	end	
 
