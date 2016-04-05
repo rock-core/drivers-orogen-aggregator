@@ -220,7 +220,9 @@ module StreamAlignerPlugin
 	if(curTime - _lastStatusTime > base::Time::fromSeconds(1))
 	{
 	    _lastStatusTime = curTime;
-	    _#{agg_name}_status.write(_#{agg_name}.getStatus());
+            ::aggregator::StreamAlignerStatus stream_aligner_status = _#{agg_name}.getStatus();
+            stream_aligner_status.name = getName();
+	    _#{agg_name}_status.write(stream_aligner_status);
 	}
     }")
 
