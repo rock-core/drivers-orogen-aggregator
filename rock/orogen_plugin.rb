@@ -177,7 +177,8 @@ module StreamAlignerPlugin
 
 	    task.in_base_hook("configure", "
     _#{agg_name}.clear();
-    _#{agg_name}.setTimeout( base::Time::fromSeconds( _aggregator_max_latency.value()) );")
+    const double max_latency = _aggregator_max_latency.value();
+    _#{agg_name}.setTimeout( base::Time::fromSeconds( max_latency ) );")
 
 	    config.streams.each do |m|     
 		callback_name = m.port_name + "Callback"
@@ -200,7 +201,7 @@ module StreamAlignerPlugin
     const double #{m.port_name}Period = _#{m.port_name}_period.value();
     #{index_name} = _#{agg_name}.registerStream< #{port_data_type} >(
 	boost::bind( &#{task.name}Base::#{callback_name}, this, _1, _2 ),
-	#{buffer_size_factor}* ceil( #{config.max_latency}/#{m.port_name}Period),
+	#{buffer_size_factor}* ceil( max_latency/#{m.port_name}Period ),
 	base::Time::fromSeconds( #{m.port_name}Period ) );
     _lastStatusTime = base::Time();")
 
