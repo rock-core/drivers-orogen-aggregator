@@ -1,10 +1,10 @@
+# frozen-string-literal: true
 name "aggregator"
 
 import_types_from "base"
 using_library "aggregator"
 import_types_from "aggregator/StreamAlignerStatus.hpp"
 import_types_from "aggregator/TimestampEstimatorStatus.hpp"
-
 
 typekit do
     if type_export_policy == :used
@@ -15,5 +15,5 @@ typekit do
     end
 
     export_types '/aggregator/StreamAlignerStatus',
-        '/aggregator/TimestampEstimatorStatus'
-end	
+                 '/aggregator/TimestampEstimatorStatus'
+end
