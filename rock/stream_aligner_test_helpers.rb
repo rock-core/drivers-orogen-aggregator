@@ -7,13 +7,23 @@ module Syskit
         module TestHelpers
             # write `sample` to `port` and waits until status reader `latest_time` equals
             # sample time
-            def stream_aligner_write(task, port, sample, time_field: "timestamp", &block)
+            def stream_aligner_write(
+                task,
+                port,
+                sample,
+                sample_time_field: "timestamp",
+                port_time_field: "timestamp",
+                max_latency: 0.1,
+                &block
+            )
                 reader = stream_aligner_status_reader(task)
-                expect_execution do
-                    syskit_write port, sample
+                writer = syskit_create_writer port
+                expect_execution.timeout(15).poll do
+                    writer.write(sample)
                 end.to do
                     have_one_new_sample(reader).matching do |t|
-                        t[time_field] == sample[time_field]
+                        (t[port_time_field] - sample[sample_time_field])
+                            .abs <= max_latency
                     end
                     instance_eval(&block) if block # let the caller add more predicates
                 end
@@ -26,13 +36,13 @@ module Syskit
             end
 
             # setup called in minitest's before block
-            def setup
+            def stream_aligner_reader_setup
                 @stream_aligner_status_reader = {}
                 super
             end
 
             # teardown called in minitest's after block
-            def teardown
+            def stream_aligner_reader_teardown
                 @stream_aligner_status_reader.each_value(&:disconnect)
                 super
             end
