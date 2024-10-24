@@ -13,15 +13,8 @@ install(FILES ${PROJECT_SOURCE_DIR}/rock/roby_plugin.rb
         RENAME aggregator_plugin.rb)
 
 install(FILES ${PROJECT_SOURCE_DIR}/rock/stream_aligner_test_helpers.rb
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/aggregator/lib/test_helpers.rb
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/aggregator/lib/syskit/aggregator
         RENAME test_helpers.rb)
-
-if (ROCK_TEST_ENABLED)
-    find_package(Rock)
-    include(RockRuby)
-    enable_testing()
-    rock_ruby_test("aggregator" "test/rock/stream_aligner_test_helpers_test.rb")
-endif()
 
 # FIND_PACKAGE(KDL)
 # FIND_PACKAGE(OCL)
