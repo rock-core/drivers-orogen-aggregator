@@ -4,25 +4,47 @@
 module Syskit
     module Aggregator
         # Test helpers for stream aligner
-        #
-        # These create a synchronization by using the `transformer_stream_aligner_port`
-        # for transformer tasks or `stream_aligner_status_port` for pure stream aligner
-        # tasks by checking the time of the processed samples until one matches the
-        # written sample time or the timeout is reached.
         module TestHelpers
-            # @api public
+            # Writes a sample to a stream aligned component and waits for its processing
             #
-            # Writes a sample to the port and wait until a status reader matching
-            # `latest_time` and `sample_time_field` is found.
-            # In addition, let's the caller call more predicates for the function
-            # expect execution.
+            # @param task
+            # @param port The port where the sample must be written. This port must be
+            #    an aligned port w.r.t. the stream aligner configuration.
+            # @param sample The sample that must be written
+            # @param [String] sample_time_field name of the field in the sample that
+            #    contains the logical time, if it is not 'timestamp'
+            # @param block if needed, pass additional `expect_execution` predicates within
+            #    this block (statements that would be given in the `.to { }` block)
+            # @return [Object] if additional predicates are given via a block, the value
+            #    returned by these predicates. Otherwise, nothing
             #
-            # @param [task]
-            # @param [port] The port where the sample must be written
-            # @param [sample] The sample that must be written
-            # @param [sample_time_field] Parameter name as a string for
-            #                            the time on the sample
-            # @param [&block] Extra predicates needed for the test
+            # @example basic usage
+            #     # sample_time_field is necessary as RigidBodyState's timestamp field
+            #     # is called `time`
+            #     stream_aligner_write(
+            #         task, task.input_port,
+            #         Types.base.samples.RigidBodyState.new(
+            #             time: Time.now,
+            #             position: Types.base.Vector3d.new(0, 0, 0)
+            #         ), sample_time_field: "time"
+            #     )
+            #
+            # @example additional predicates can be specified in the to{} block
+            #     input_sample =
+            #         Types.base.samples.RigidBodyState.new(
+            #             time: Time.now,
+            #             position: Types.base.Vector3d.new(0, 0, 0)
+            #         )
+            #
+            #     # the output value of stream_aligner_write is the output value of
+            #     # the predicates setup by the block. Here, the matched sample.
+            #     output_port_sample = stream_aligner_write(
+            #         task, task.input_port, input_sample, sample_time_field: "time"
+            #     ) do
+            #         have_one_new_sample(task.output_port).matching do |t|
+            #             t.position == expected_position
+            #         end
+            #     end
             def stream_aligner_write(
                 task, port, sample, sample_time_field: "timestamp", &block
             )
@@ -40,17 +62,14 @@ module Syskit
 
             # @api private
             #
-            # Creates a reader with a buffer of size 20 to the task
-            # and defines the correct port name and property name for
-            # a transformer task or a pure stream aligner task.
-            # Also, verifies if the Transformer_status_period is 0.
-            # This is needed since the sample time must be equal to
-            # reader latest time.
-            # Finally, these readers are cached and disconnected on teardown.
+            # Returns a reader to access the status of a stream aligner
             #
-            # @param [task]
+            # The task may be using the stream aligner directly, or be based on
+            # the transformer.
             #
-            # return [Reader]
+            # @param task
+            #
+            # @return reader
             def stream_aligner_status_reader(task)
                 property_name, port_name =
                     if task.properties.include?(:transformer_status_period)
@@ -77,6 +96,7 @@ module Syskit
             # @api private
             #
             # Setup called in minitest's before block by default.
+            #
             # There's no need to call then anywhere inside your tests.
             def setup
                 @stream_aligner_status_reader = {}
@@ -86,6 +106,7 @@ module Syskit
             # @api private
             #
             # Teardown called in minitest's after block by default.
+            #
             # There's no need to call then anywhere inside your tests.
             def teardown
                 @stream_aligner_status_reader.each_value(&:disconnect)
