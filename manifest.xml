@@ -5,6 +5,7 @@
   <author>Janosch Machowinski</author>
   <license>lgpl</license>
   <depend package="drivers/aggregator" />
+  <depend package="base/types" />
   <depend package="base/orogen/types" />
   <tags>stable</tags>
 </package>

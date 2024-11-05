@@ -12,6 +12,9 @@ install(FILES ${PROJECT_SOURCE_DIR}/rock/roby_plugin.rb
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/orogen/plugins/roby
         RENAME aggregator_plugin.rb)
 
+install(FILES ${PROJECT_SOURCE_DIR}/rock/stream_aligner_test_helpers.rb
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/aggregator/lib/syskit/aggregator
+        RENAME test_helpers.rb)
 
 # FIND_PACKAGE(KDL)
 # FIND_PACKAGE(OCL)
