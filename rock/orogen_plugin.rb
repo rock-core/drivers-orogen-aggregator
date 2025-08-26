@@ -172,11 +172,13 @@ module StreamAlignerPlugin
             task.add_base_header_code("#include <aggregator/DetermineSampleTimestamp.hpp>", true)
             task.add_base_member("aggregator", "_#{agg_name}", "aggregator::StreamAligner")
             task.add_base_member("lastStatusTime", "_lastStatusTime", "base::Time")
+            task.add_base_member("statusPeriod", "_statusPeriod", "base::Time")
 
             task.in_base_hook("configure", "
     _#{agg_name}.clear();
     const double max_latency = _aggregator_max_latency.value();
-    _#{agg_name}.setTimeout( base::Time::fromSeconds( max_latency ) );")
+    _#{agg_name}.setTimeout( base::Time::fromSeconds( max_latency ) );
+    _statusPeriod = base::Time::fromSeconds( _#{agg_name}_status_period.get() );")
 
             config.streams.each do |m|
                 callback_name = m.port_name + "Callback"
@@ -216,7 +218,7 @@ module StreamAlignerPlugin
             task.in_base_hook('update', "
     {
         const base::Time curTime(base::Time::now());
-        if(curTime - _lastStatusTime > base::Time::fromSeconds(1))
+        if(curTime - _lastStatusTime > _statusPeriod)
         {
             _lastStatusTime = curTime;
             ::aggregator::StreamAlignerStatus stream_aligner_status = _#{agg_name}.getStatus();
