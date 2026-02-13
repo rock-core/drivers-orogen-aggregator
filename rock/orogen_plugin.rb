@@ -168,8 +168,9 @@ module StreamAlignerPlugin
             agg_name = config.name
             generate_port_listener_code(task, config)
 
-            task.add_base_header_code("#include<aggregator/StreamAligner.hpp>", true)
+            task.add_base_header_code("#include <aggregator/StreamAligner.hpp>", true)
             task.add_base_header_code("#include <aggregator/DetermineSampleTimestamp.hpp>", true)
+            task.add_base_header_code("#include <functional>", true)
             task.add_base_member("aggregator", "_#{agg_name}", "aggregator::StreamAligner")
             task.add_base_member("lastStatusTime", "_lastStatusTime", "base::Time")
             task.add_base_member("statusPeriod", "_statusPeriod", "base::Time")
@@ -200,7 +201,7 @@ module StreamAlignerPlugin
                 task.in_base_hook("configure", "
     const double #{m.port_name}Period = _#{m.port_name}_period.value();
     #{index_name} = _#{agg_name}.registerStream< #{port_data_type} >(
-        boost::bind( &#{task.name}Base::#{callback_name}, this, _1, _2 ),
+        std::bind( &#{task.name}Base::#{callback_name}, this, std::placeholders::_1, std::placeholders::_2 ),
         #{buffer_size_factor}* ceil( max_latency/#{m.port_name}Period ),
         base::Time::fromSeconds( #{m.port_name}Period ) );
     _lastStatusTime = base::Time();")
